@@ -1,0 +1,248 @@
+que1)
+
+create table message(err_message varchar2(20));
+
+declare
+v_sal number:=&newsal;
+v_name varchar2(20);
+begin
+select ename into v_name from emp where sal=v_sal;
+dbms_output.put_line(v_sal||' has name '||v_name);
+insert into message values(v_sal||' has name '||v_name);
+exception
+when too_many_rows then
+dbms_output.put_line('insert unique value');
+insert into message values('Too many rows for salary '||v_sal);
+when no_data_found then
+dbms_output.put_line('insert valid salary');
+insert into message values('please insert valid value for salary');
+when other then
+dbms_output.put_line('exception raised');
+insert into message values('exception raised');
+end;
+/
+
+Enter value for newsal: 1512.5
+insert unique value
+
+SQL> select err_message from message;
+ERR_MESSAGE
+---------------------------------------------
+
+Too many rows for salary 3630
+Too many rows for salary 1512.5
+please insert valid value for salary
+968 has name SMITH
+
+
+ENAME             SAL
+---------- ----------
+KING             6050
+BLAKE          3448.5
+CLARK          2964.5
+JONES         3279.94
+MARTIN         1512.5
+ALLEN            1936
+TURNER           1815
+JAMES          1149.5
+WARD           1512.5
+FORD             3630
+SMITH             968
+
+ENAME             SAL
+---------- ----------
+SCOTT            3630
+ADAMS            1331
+MILLER           1872
+
+que2)
+//to find code of exception
+SQL> insert into dept values (10,'asad','asdfsda');
+insert into dept values (10,'asad','asdfsda')
+*
+ERROR at line 1:
+ORA-00001: unique constraint (P2007_16.DEPT_PRIMARY_KEY) violated
+declare
+DUPLICATE_DEPT exception;
+n number:=&deptid;
+dn varchar2(20):='&newname';
+newloc varchar2(20):='&newlocation';
+pragma exception_init(DUPLICATE_DEPT,-00001);
+begin
+insert into dept values(n,dn,newloc);
+dbms_output.put_line('no error');
+exception
+when DUPLICATE_DEPT then
+dbms_output.put_line('please enter diff values these values already exists');
+end;
+/
+
+Enter value for deptid: 22
+Enter value for newname: sports
+Enter value for newlocation: bangalore
+no error
+SQL> select * from dept
+  2  ;
+
+    DEPTNO DNAME          LOC
+---------- -------------- -------------
+        10 ACCOUNTING     NEW YORK
+        20 RESEARCH       DALLAS
+        30 SALES          CHICAGO
+        40 OPERATIONS     BOSTON
+        22 sports         bangalore
+
+or
+
+Enter value for deptid: 30
+Enter value for newname: sales
+Enter value for newlocation: chicago
+please enter diff values these values already exists
+
+
+que3)
+
+declare
+ct number:=0;
+duplicate_president exception;
+begin
+select count(*) into ct from emp where job='PRESIDENT';
+if ct>1 then
+raise duplicate_president;
+else
+dbms_output.put_line('no error');
+end if;
+exception
+when duplicate_president then
+dbms_output.put_line('more than 1 president');
+end;
+/
+
+
+que4)
+
+declare
+e1 number:=&emp1;
+e2 number:=&emp2;
+v_sal1 number;
+v_sal2 number;
+begin
+	begin
+select sal into v_sal1 from emp where empno=e1;
+update emp set sal=sal+sal*0.1where empno=e1;
+exception
+when no_data_found then
+dbms_output.put_line('employee e1 doesnot exist');
+	end;
+select sal into v_sal2 from emp where empno=e2;
+update emp set sal=sal+sal*0.2where empno=e2;
+exception
+when no_data_found then
+dbms_output.put_line('employee  e2 doesnot exist');
+end;
+
+before program exe
+
+      SAL      EMPNO
+    ---------    ----------
+     1149.5       7900
+       3630       7788
+    
+after program
+ENAME         EMPNO        SAL
+----------         ----------          ----------
+JAMES            7900             1379.4
+SCOTT            7788             3993
+
+que5)Write a PLSQL block which takes Movie booking details as input from the user and inserts a record in the booking table after doing the following validation
+oBook_id should be unique
+oWant to book for today 
+oPerson_booked is the user itself
+otheartre_id, movie_id, show_id should be valid
+oNo_of_tickets are 2
+
+Raise a user defined exception for each of the above validations, display appropriate error message and terminate the program
+BOOK_ID        
+BOOKING_DATE   
+PERSON_BOOKED  
+THEARTRE_ID    
+MOVIE_ID       
+SHOW_ID        
+NO_OF_TICKETS  
+b number:=&bid;
+bd date:=&bdate;
+t number:=&tid;
+m number:=&mid;
+s number:=&sid;
+
+declare
+ 	bk booking.book_id%type;
+ 	ct number;
+ 	not_unique_id exception;
+
+ 	dt booking.booking_date%type;
+ 	invalid_date exception;
+
+ 	name varchar2(30);
+ 	t booking.theatre_id%type;
+ 	tid number;
+ 	invalid_theatre exception;
+
+ 	m booking.movie_id%type;
+ 	mid number;
+ 	invalid_movie exception;
+
+ 	s booking.show_id%type;
+ 	sid number;
+ 	invalid_show exception;
+
+ 	tickets number;
+ 	more_tickets exception;
+
+begin
+	bk:=&bookingno;
+	select count(*) into ct from booking where book_id=bk;
+	if ct>0 then
+		raise not_unique_id;
+	end if;
+
+	dt:=to_date('&date','DD-MM-YYYY');
+	dbms_output.put_line(dt);
+	select sysdate into sysdt from dual;
+	dbms_output.put_line(sysdt);
+	if(trunc(dt)!=trunc(sysdt)) then
+		raise invalid_date;
+	end if;
+
+	name:=&booking_name;
+
+	t:='&theatre_id';
+	select count(theatre_id) into tid from theatre where theatre_id=t;
+	if tid !=1 then
+		raise invalid_theatre;
+	end if;
+
+	m:='&movie_id';
+	select count(movie_id) into mid from movie_details where movie_id=m;
+
+	
+
+
+ 
+
+begin
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

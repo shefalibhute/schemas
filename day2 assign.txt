@@ -1,0 +1,322 @@
+que1)Write a PL/SQL block that takes a department number from a user and increases the salary of all the employees belonging to the department by 10%. The block should display on the screen how many records are updated.
+
+declare
+v_deptid number:=&deptid;
+cursor c_dept is select ename,sal+sal*0.1 inc_sal,sal,deptno from emp where deptno=v_deptid;   
+v_dept c_dept%rowtype;
+rowcount1 number;
+begin
+open c_dept;
+dbms_output.put_line('dept selected is ' ||v_deptid);
+loop
+fetch c_dept into v_dept;
+exit when c_dept%notfound;     
+dbms_output.put_line('ename= '||v_dept.ename||' deptno= '||v_dept.deptno||' salary= '||v_dept.sal||' salary= '||v_dept.inc_sal);
+rowcount1:=c_dept%rowcount;
+end loop;
+dbms_output.put_line('no. of rows updated '||rowcount1);
+close c_dept;
+end;
+/
+Enter value for deptid: 10
+dept selected is 10
+ename=KING deptno=10 salary=5500
+ename=CLARK deptno=10 salary=2695
+ename=MILLER deptno=10 salary=1430
+no. of rows updated 3
+
+
+
+que2)Write a PL/SQL block to display the employee first name, salary and JOB_TITLE for the first five employees recorded in the “employees” table by making use of :
+•Simple for loop with “EXIT WHEN” condition
+•The “WHILE” condition
+•Cursor FOR LOOP 
+3.
+declare
+cursor c_emp is select * from emp;
+v_emp c_emp%rowtype;
+begin
+open c_emp;
+for i in 1..5
+loop
+fetch c_emp into v_emp;
+dbms_output.put_line('name '||v_emp.ename||' salary '||v_emp.sal||' job title '||v_emp.job);
+end loop;close c_emp;
+end;
+/
+
+2.
+
+declare
+cursor c_emp is select * from emp;
+v_emp c_emp%rowtype;
+i number:=1;
+begin
+open c_emp;
+while(i<=5)
+loop
+fetch c_emp into v_emp;
+dbms_output.put_line('name '||v_emp.ename||' salary '||v_emp.sal||' job title '||v_emp.job);
+i:=i+1;
+end loop;
+close c_emp;
+end;
+/
+
+1.
+declare
+cursor c_emp is select * from emp;
+v_emp c_emp%rowtype;
+i number:=1;
+begin
+open c_emp;
+loop
+i:=i+1;
+fetch c_emp into v_emp;
+dbms_output.put_line('name '||v_emp.ename||' salary '||v_emp.sal||' job title '||v_emp.job);
+exit when (i>5);
+end loop;
+close c_emp;
+end;
+/
+
+que3)Write a PL/SQL block that displays names and salaries of all “Programmer” recorded in the employees table by making use of a cursor.
+declare
+cursor c_sal is select * from emp where lower(job)='clerk';
+v_sal c_sal%rowtype;
+begin
+open c_sal;
+loop
+fetch c_sal into v_sal;
+exit when c_sal%notfound;    
+dbms_output.put_line('name '||v_sal.ename||' salary '||v_sal.sal);
+end loop;
+close c_sal;
+end;
+/
+name JAMES salary 950
+name SMITH salary 800
+name ADAMS salary 1100
+name MILLER salary 1300
+
+que4)Write a PL/SQL block that accepts a value of a job_id from user and displays the full names, department numbers and salaries of the employees from the “employees” table having that job. The block makes use of a parameterized cursor. The user input is passed on to the cursor as a parameter. 
+
+declare
+p_job varchar2(20):='&jobid';
+cursor c_emp(p_1 varchar2) is select * from emp where lower(job)=p_1;      
+v_emp c_emp%rowtype;                           
+begin
+open c_emp(p_job);    
+dbms_output.put_line('selected job is '||p_job);
+loop                                                                                      
+fetch c_emp into v_emp;    
+exit when c_emp%notfound;                         
+dbms_output.put_line('ename='||v_emp.ename||' sal='||v_emp.sal||'depno is='||v_emp.deptno);
+end loop;
+close c_emp; 
+end;
+/
+OR
+declare
+p_job varchar2(20):='&jobid';
+cursor c_emp(p_1 varchar2) is select * from emp where lower(job)=p_1;                             
+ begin 
+dbms_output.put_line('selected job is '||p_job);
+for v_emp in c_emp(p_job)              
+loop                                                                                                               
+dbms_output.put_line('ename='||v_emp.ename||' sal='||v_emp.sal||'depno is='||v_emp.deptno);
+end loop;
+end;
+/
+
+Enter value for jobid: clerk
+old   2: p_job varchar2(20):='&jobid';
+new   2: p_job varchar2(20):='clerk';
+selected job is clerk
+ename=JAMES sal=950depno is=30
+ename=SMITH sal=800depno is=20
+ename=ADAMS sal=1100depno is=20
+ename=MILLER sal=1300depno is=10
+
+que5)Write a PL/SQL block that updates the salaries of the employees as per the following rules: 
+•If the job is SH_CLERKand department_id is 10 then increase the salary by 20%
+•If the job is ST_MAN and department_id is 20 then increase the salary by 5%
+•For all the other cases increase the salary by 10%
+The block makes use of a cursor for performing the updates and ensures that the appropriate locks are taken on the data retrieved by the cursor, as the data is to be updated. 
+
+
+declare
+cursor c_emp is select * from emp for update of sal;   
+begin
+for v_emp in c_emp
+loop
+if v_emp.deptno=10 and v_emp.job='CLERK' then
+update emp set sal=sal+sal*0.2where current of c_emp;
+dbms_output.put_line('for deptno 10 ename= '||v_emp.ename||' sal= '||v_emp.sal||' deptno= '||v_emp.deptno);
+elsif v_emp.deptno=20 and v_emp.job='MANAGER' then
+update emp set sal=sal+sal*0.05 where current of c_emp;
+dbms_output.put_line('for deptno 20 ename= '||v_emp.ename||' sal= '||v_emp.sal||' deptno= '||v_emp.deptno);
+else
+update emp set sal=sal+sal*0.1 where current of c_emp;
+dbms_output.put_line('for other dept ename= '||v_emp.ename||' sal= '||v_emp.sal||' deptno= '||v_emp.deptno);
+end if;
+end loop;
+end;
+/
+before program
+JOB           DEPTNO        SAL
+--------- ---------- ----------
+PRESIDENT        10       5000
+MANAGER         10       2450
+CLERK               10       1300
+CLERK               20       1100
+ANALYST          20       3000
+CLERK               20        800
+ANALYST          20       3000
+MANAGER        20       2975
+SALESMAN       30       1250
+CLERK               30        950
+SALESMAN        30       1600
+SALESMAN        30       1250
+MANAGER         30       2850
+SALESMAN        30       1500
+
+after program
+JOB           DEPTNO        SAL
+--------- ---------- ----------
+PRESIDENT        10       5500
+MANAGER         10       2695
+CLERK               10       1560
+CLERK               20       1210
+ANALYST          20       3300
+CLERK              20        880
+ANALYST          20       3300
+MANAGER        20    3123.75
+SALESMAN      30       1375
+CLERK              30       1045
+SALESMAN      30       1760
+SALESMAN      30       1375
+MANAGER       30       3135
+SALESMAN      30       1650
+
+que6)Write a PL/SQL block that retrieves information from the “department” and “employees” table and displays it in the following format
+
+Department ID :10		Department Name : XXXX
+________________________________________________________
+EMPLOYEE NUMBER 	 EMPLOYEE FULL NAME	SALARY  	JOB
+
+XXXXXX		XXXXXX			XXXX		XXXXX
+XXXXXX		XXXXXX			XXXX		XXXXX
+.........
+
+Department ID : 20		Department Name : XXXX
+________________________________________________________
+EMPLOYEE NUMBER 	 EMPLOYEE FULL NAME	SALARY  	JOB
+
+XXXXXX		XXXXXX			XXXX		XXXXX
+XXXXXX		XXXXXX			XXXX		XXXXX
+.........
+
+    ......and so on for all the departments recorded in the “department” table.
+(Hint : Make use of two cursors –one to retrieve department details and another a parameterized cursor to retrieve employee details. In a loop, use a cursor to retrieve the department and the department name from the DEPARTMENT table, pass the department_id second  cursor to retrieve the required column values from the “EMPLOYEES” table, for those employees who work in that department.)
+
+declare
+cursor c_dept is select * from dept;
+cursor c_emp is select * from emp;
+begin
+for v_dept in c_dept
+loop
+dbms_output.put_line('department id= '||v_dept.deptno||'  department name= '||v_dept.dname);
+
+for v_emp in c_emp
+loop
+
+if (v_dept.deptno=v_emp.deptno)
+then
+dbms_output.put_line('employee id= '||v_emp.empno||'  employee name= '||v_emp.ename||'  salary= '||v_emp.sal||' job= '||v_emp.job);
+
+end if;
+end loop;
+end loop;
+end;
+/
+
+department id= 10 department name= ACCOUNTING
+employee id= 7839 employee name= KING salary= 6050 job= PRESIDENT
+employee id= 7782 employee name= CLARK salary= 2964.5 job= MANAGER
+employee id= 7934 employee name= MILLER salary= 1872 job= CLERK
+department id= 20 department name= RESEARCH
+employee id= 7566 employee name= JONES salary= 3279.94 job= MANAGER
+employee id= 7902 employee name= FORD salary= 3630 job= ANALYST
+employee id= 7369 employee name= SMITH salary= 968 job= CLERK
+employee id= 7788 employee name= SCOTT salary= 3630 job= ANALYST
+employee id= 7876 employee name= ADAMS salary= 1331 job= CLERK
+department id= 30 department name= SALES
+employee id= 7698 employee name= BLAKE salary= 3448.5 job= MANAGER
+employee id= 7654 employee name= MARTIN salary= 1512.5 job= SALESMA
+employee id= 7499 employee name= ALLEN salary= 1936 job= SALESMAN
+employee id= 7844 employee name= TURNER salary= 1815 job= SALESMAN
+employee id= 7900 employee name= JAMES salary= 1149.5 job= CLERK
+employee id= 7521 employee name= WARD salary= 1512.5 job= SALESMAN
+department id= 40 department name= OPERATIONS
+
+
+OR//not working
+
+declare
+cursor c_dept is select * from dept;
+cursor c_emp(v_deptno) is select * from emp where deptno=v_deptno;
+begin
+for v_dept in c_dept
+loop
+dbms_output.put_line('department id= '||v_dept.deptno||'  department name= '||v_dept.dname);
+
+for v_emp in c_emp(v_dept)
+loop
+
+dbms_output.put_line('employee id= '||v_emp.empno||'  employee name= '||v_emp.ename||'  salary= '||v_emp.sal||' job= '||v_emp.job);
+
+
+end loop;
+end loop;
+end;
+/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

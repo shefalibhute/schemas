@@ -1,0 +1,491 @@
+
+
+create or replace type emp_address as object
+(street varchar(20),
+city varchar(20),
+country varchar(20));
+/
+
+create table person(pid number, pname varchar(20), address emp_address);
+
+insert into person values(1,'shefali',emp_address('Hinjewadi','pune','india'));
+
+insert into person values(2,'pooja',emp_address('Pimple_nilakh','pune','india'));
+
+select * from person;
+
+
+  PID                  PNAME                    ADDRESS(STREET, CITY, COUNTRY)
+----------      -------------------          ----------------------------------------------
+    1                     shefali                         EMP_ADDRESS('Hinjewadi', 'pune', 'India')
+        
+    2                    pooja                           EMP_ADDRESS('Pimple_nilakh', 'pune', 'India')
+
+
+select p.address.street from person p where pid=1;
+ADDRESS.CITY
+---------------
+pune
+
+
+
+//updating a row
+
+update person set address = emp_address('Hinjewadi','pune','India') where pid=1;
+
+or
+
+//constructor(add) in unnamed block
+declare
+add emp_address;
+begin
+add:=emp_address('Mezza9','pune','India');
+update person set address =add where pid=1;
+end;
+/
+
+-------------------------------------------------------------------------------------------
+drop table person;
+
+create or replace type emp_address as object
+(street varchar2(20),
+city varchar2(20),
+country varchar2(20),
+member function getCity return varchar2);
+/
+
+create type body emp_address as
+member function getCity return varchar2 is
+begin
+return city;
+end;
+end;
+
+//again create table
+
+create table person(pid number, pname varchar(20), address emp_address);
+
+insert into person values(1,'shefali',emp_address('Hinjewadi','pune','india'));
+
+insert into person values(2,'pooja',emp_address('Pimple_nilakh','pune','india'));
+/////////////
+
+//now run query//
+select p.address.getCity() from person p where pid=1;
+
+P.ADDRESS.GETCITY()
+-------------------
+pune
+
+----------------------------------------------------------------------------------------------------------------------------
+                                                                     COLLECTION
+----------------------------------------------------------------------------------------------------------------------------
+
+VARRAY:-
+
+create type phone_no as varray(5) of number;
+/
+
+create table emp_v (empid number,ename varchar2(20),phone phone_no);
+
+insert into emp_v values(1,'AAA', phone_no(1236,4789,5896));
+insert into emp_v values(2,'AbA', phone_no(8236,4589,5796));
+
+select * from emp_v where empid=1;
+
+
+//unnamed block//
+declare
+t_phone phone_no;      //datatype that of phone_no
+begin
+select phone into t_phone from emp_v where empid=1;
+for x in 1..t_phone.count
+loop
+dbms_output.put_line('phone no value= '||t_phone(x));
+end loop;
+dbms_output.put_line('first phone no= '||t_phone(t_phone.first));
+dbms_output.put_line('first phone no= '||t_phone(t_phone.last));
+dbms_output.put_line('first phone no= '||t_phone(t_phone.next(t_phone.first)));
+end;
+/
+
+phone no value= 1236
+phone no value= 4789
+phone no value= 5896
+first phone no= 1236
+first phone no= 5896
+first phone no= 4789
+---------------------------------------------------------------------------------------------------------------
+
+eg.//refer for assignment collection prac 2////////
+create type abc1 as object(data1 varchar2(20),data2 varchar2(20));
+
+create type phone_no1 as varray(5) of abc1;
+
+create table emp_v1 (empid number,ename varchar2(20),phone phone_no1);
+
+insert into emp_v1 values(1,'aaa',phone_no1(abc1('aaa','bbb'),abc1('xyz','xzsx')));
+insert into emp_v1 values(2,'aaabb',phone_no1(abc1('aaba','bbab'),abc1('xbyz','xzhsx')));
+
+select * from emp_v1 where empid=1;
+
+declare
+t_phone phone_no1;
+cursor c1 is select * from emp_v1;
+begin
+for y in c1
+loop
+select phone into t_phone from emp_v1 where empid=y.empid;
+for x in 1..t_phone.count
+loop
+dbms_output.put_line('phone no data1= '||t_phone(x).data1||' data2= '||t_phone(x).data2);
+end loop;
+end loop;
+end;
+
+
+///////////phone no data1= aaa data2= bbb
+phone no data1= xyz data2= xzsx
+phone no data1= aaba data2= bbab
+phone no data1= xbyz data2= xzhsx/////////////////////
+
+--------------------------------------------to update data without replacing-------------------------------------------
+
+create or replace procedure forInsert(empno number,v_phone phone_no1) as
+begin
+insert into emp_v1 values (3,'zzz',v_phone);
+end;
+
+create or replace procedure forUpdate(p_empno number,v_phone phone_no1) as
+begin
+update emp_v1 set phone=v_phone where empid=p_empno;
+end;
+
+declare
+t_phone phone_no1;
+begin
+t_phone := phone_no1(abc1('qqq','qqqq'),abc1('www','wwww'));
+forUpdate(1,t_phone);
+end;
+
+create or replace procedure formodify(p_empid number,p_phone in out phone_no1) as
+var number;
+begin
+var:=p_phone.count;
+p_phone.extend(1);
+p_phone(var+1):=abc1('demo','demo1');
+update emp_v1 set phone=p_phone where empid=p_empid;
+dbms_output.put_line('done');
+end;
+
+declare 
+t_phone phone_no1;
+begin
+select phone into t_phone from emp_v1 where empid=1;
+formodify(1,t_phone);
+end;
+
+
+-------------------------------------------------------nested tables---------------------------------------------------------------
+
+fixed size:-go for varray
+otherwise for nested tables
+
+
+create type vehicle as object(vid number, vname varchar2(20));
+
+create type vehicle_tab as table of vehicle;
+
+create table person_data(pid number, pname varchar2(20),vehicle_details vehicle_tab)
+nested table vehicle_details store as vehicle_details_tab;
+
+insert into person_data values(1,'shefali',vehicle_tab(vehicle(1,'jetta'),vehicle(2,'fortuner')));
+o/p:-
+         1 shefali
+VEHICLE_TAB(VEHICLE(1, 'jetta'), VEHICLE(2, 'fortuner'))
+
+--------------------------------------------------------------------------------------------------
+
+declare
+new_vehicle vehicle_tab;
+begin
+new_vehicle:=vehicle_tab(vehicle(1,'firstvehicle'),vehicle(21,'secondvehicle'));
+update person_data set vehicle_details=new_vehicle where pid=1;
+dbms_output.put_line('updated');
+end;
+/
+o/p after updating:-
+         1 shefali
+VEHICLE_TAB(VEHICLE(1, 'firstvehicle'), VEHICLE(21, 'secondvehicle'))
+-----------------------------------------------------------------------------------------------
+//using cursor in nested table
+
+declare
+l_name person_data.pname%type;
+l_vehicle person_data.vehicle_details%type;
+cursor get_data is select pname,vehicle_details from person_data;
+begin
+open get_data;
+loop
+fetch get_data into l_name,l_vehicle;
+exit when get_data%notfound;
+dbms_output.put_line('person name= '||l_name||'  and vehicles are');
+for x in 1..l_vehicle.count
+loop
+dbms_output.put_line(l_vehicle(x).vname);
+end loop;
+end loop;
+end;
+/
+
+o/p:=
+person name= shefali  and vehicles are
+firstvehicle
+secondvehicle
+--------------------------------------------to update only certain column of a row-------------------------------
+update the (select vehicle_details from person_data where pid=1) set vname='new_vehicle_scooty' where vid=21;
+
+-----------------------------to insert into certain column-------------------------------------
+insert into the(select vehicle_details from person_data where pid=1) values(vehicle(22,'duke'));
+
+
+------------------------------to delete certain part fron a column--------------------
+
+delete from the(select vehicle_details from person_data where pid=1) where vid=
+21;
+
+----------------------------------------------------------TRIGGERS---------------------------------------------
+same as procedure bt need not call it.......is fired implicitly
+//statementlevel
+create trigger tr_update_sal after update on emp
+begin
+dbms_output.put_line('sal is updated from trigger');
+end;
+/
+
+SQL> update emp set sal=sal+1000 where empno=7788;
+sal is updated from trigger
+
+//rowlevel
+create or replace trigger tr_update_sal after update on emp
+for each row
+begin
+dbms_output.put_line('sal is updated from trigger');
+end;
+/
+update emp set sal=sal+1000;   //without where clause will update all the rows.
+
+//
+create or replace trigger tr_update_sal after update on emp
+for each row
+begin
+if inserting then
+dbms_output.put_line('inserting row');
+elsif updating then
+dbms_output.put_line('updating row');
+elsif deleting then
+dbms_output.put_line('deleting row');
+end if;
+end;
+/
+
+----//----/--///-----------//----------//------------//----------//----------
+create table sal_details(empno number,sal number);
+create or replace trigger tr_update_sal after update on emp
+for each row
+begin
+insert into sal_details values(:old.empno,:new.sal);
+dbms_output.put_line('added in sal details');
+end;
+/
+
+
+create or replace trigger tr_update_sal after update on emp
+for each row
+when (old.sal<>new.sal)
+begin
+insert into sal_details values(:old.empno,:new.sal);
+dbms_output.put_line('added in sal details');
+end;
+/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------------
+
+------------------------------------------ASSIGNMENT----------------------------
+QUE1]
+•Create a user defined data type named “MARKS_TYPE” having the following subfields
+
+Column	Data type and size
+Subject	VARCHAR 2 (25)
+midTermMarks	NUMBER (3)
+annualMarks	NUMBER(3)
+
+
+•Create an object table with name “MYMARKS” having a single column of type MARKS_TYPE.
+•Insert any 3 records in the table with relevant data
+•Fire an appropriate SELECT command to get midTermMarks and annualMarks for all records for the given subject
+
+create or replace type marks_type as object
+(subject varchar(20),
+midterm number(3),
+annual number(3));
+/
+
+
+create table mymarks (rollno number,name varchar2(20),term marks_type);
+
+insert into mymarks values(111,'shef',marks_type('science',88,75));
+insert into mymarks values(222,'poo',marks_type('maths',89,79));
+insert into mymarks values(333,'yut',marks_type('science',44,55));
+
+select m.term.midterm, m.term.annual from mymarks m where m.term.subject like 'science';
+
+o/p
+TERM.MIDTERM     TERM.ANNUAL
+    ------------             -----------
+          88                        75
+          44                        55
+
+
+------------------------------------------------------------------------------------------------------------------------
+QUE2]
+•Create table “students” having the following design
+
+Column	Data type and size	Constraint
+studentName	VARCHAR 2 (25)	
+rollNo	NUMBER (3)	Primary Key
+Score	MARKS_TYPE	
+
+•Insert any 3 relevant records in the table.
+•Fire an appropriate SELECT query to get the score of a student with the given rollNO
+•Fire an appropriate command to increase the annualMarks of the student with given rollNo by five marks
+
+create or replace type marks_type as object
+(subject varchar(20),
+midterm number(3),
+annual number(3));
+/
+
+create table students(rollno number,name varchar2(20),score marks_type);
+
+insert into students values(111,'shef',marks_type('science',88,75));
+insert into students values(222,'poo',marks_type('maths',89,79));
+insert into students values(333,'yut',marks_type('science',44,55));
+
+select s.score.midterm, s.score.annual from students s where rollno=222;
+SCORE.MIDTERM SCORE.ANNUAL
+   -------------              ------------
+           89                         79
+
+
+update students s set s.score.annual=s.score.annual+5 where rollno=111;
+1 row updated.
+SQL> select s.score.midterm, s.score.annual from students s where rollno=111;
+
+SCORE.MIDTERM SCORE.ANNUAL
+     -------------         ------------
+           88                        80
+
+
+
+
+----------------------------------------------------------------------------------------------------------------------------------
+QUE]
+•Create user defined data type named “ICECREAM_TYPE” with the following data members
+
+Column	Data type and size
+flovorNo	NUMBER(2)
+Fname	VARCHAR(10)
+Cost	NUMBER(3)
+Hastopping	CHAR(1)   
+Can be Y or N
+
+•Create table named “menu” with the following design and insert five records into it.
+
+Column	Data type and size	Constraint
+MenuNo	NUMBER(2)	Primary key
+mainCourse	VARCHAR2(15)	Not Null
+Desert	ICECREAM_TYPE	
+Colddrink	CHAR(6)	
+
+•Retrieve cost and name of an icecream from menu by specifying its flavor number.
+•Update cost and maincourse column  from menu by specifying its MenuNo.
+
+create or replace type icecream_type as object
+(flavorno number(2),fname varchar2(20),cost number(3),hastopping char(1));
+
+create table menu(MenuNo number(2) primary key,mainCourse varchar2(20) not null,Desert icecream_type, Colddrink char(6));
+
+insert into menu values(11,'alooparatha',icecream_type(55,'vanila',20,'y'),'sprite');
+insert into menu values(12,'biryani',icecream_type(50,'strawberry',15,'n'),'frooti');
+insert into menu values(13,'pavbhaji',icecream_type(51,'chocolate',20,'y'),'frooti');
+insert into menu values(14,'khichadi',icecream_type(55,'vanila',20,'y'),'sprite');
+
+select m.Desert.cost, m.Desert.fname from menu m where m.Desert.flavorno=50;
+
+DESERT.COST    DESERT.FNAME
+    -----------        ------------------
+         15                 strawberry
+
+update menu m set m.Desert.cost=25 , m.mainCourse='palakparatha' where m.MenuNo=11;
+11,palakparatha,icecream_type(55,vanila,25,y),sprite
+
+---------------------------------------------------------------------------------------------------------------------------------
+
+QUE]
+A.Create an object type CUST_TAB with below attributes
+-Cust_id
+-Cust_Name
+-Plan_Name
+B.Create suitable collection type CUST_DETAILS of CUST_TAB type.
+One customer may have many plans .
+
+C.Create a table Cust_Tab_details as follows :
+
+Columname                            	Constraint  	Datatype
+Srno                          	Primary Key            	  Number(10)
+Cust_Info                      	 	             CUST_DETAILS
+Cust_number	 	                                Number(10)
+		                             
+D.Insert 2 rows in the above table 
+Atleast 2 CUST_TAB entries per srno.
+E.Write the select query to display Sr.no and Cust_info from cust_tab_detail table
+Note : Write SQL select command not the procedure.
+
+create or replace type cust_tab as object(cust_id number,cust_name )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
